@@ -16,6 +16,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -28,6 +29,35 @@ import verify_gold  # noqa: E402,F401  (applies the local sandbox patches)
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 TARGET_MODEL_NAME = 'gemma-4-31b-it-qat-w4a16-ct'
+
+
+def patient_client():
+    """LiteLLM client that waits out 429s for as long as the API asks.
+
+    The free tier allows 16k input tokens per minute for gemma-4-31b, so nearly
+    every agent turn hits it; LiteLLM's own retries give up too soon.
+    """
+    import litellm
+    from google.adk.models.lite_llm import LiteLLMClient
+
+    class PatientClient(LiteLLMClient):
+        async def acompletion(self, model, messages, tools, **kwargs):
+            # vLLM-only knobs the Gemini API rejects. Gemma thinks by default
+            # there, but the thinking budget cannot be set.
+            extra = dict(kwargs.get('extra_body') or {})
+            for k in ('chat_template_kwargs', 'thinking_token_budget'):
+                extra.pop(k, None)
+            kwargs['extra_body'] = extra or None
+            for attempt in range(200):
+                try:
+                    return await super().acompletion(model, messages, tools, **kwargs)
+                except (litellm.RateLimitError, litellm.InternalServerError,
+                        litellm.ServiceUnavailableError) as e:
+                    m = re.search(r'retry in ([\d.]+)s', str(e))
+                    await asyncio.sleep(float(m.group(1)) + 1 if m else min(60, 5 * (attempt + 1)))
+            return await super().acompletion(model, messages, tools, **kwargs)
+
+    return PatientClient()
 
 
 def check() -> None:
@@ -66,8 +96,7 @@ def main() -> None:
     litellm.drop_params = True
     os.environ.setdefault('LITELLM_LOCAL_MODEL_COST_MAP', 'True')
     models = ModelRegistry()
-    # Free-tier rate limits are tight; let LiteLLM back off and retry.
-    models.register(TARGET_MODEL_NAME, LiteLlm(model=a.model, num_retries=6))
+    models.register(TARGET_MODEL_NAME, LiteLlm(model=a.model, llm_client=patient_client()))
 
     section = yaml.safe_load((a.submission / 'eval_config.yaml').read_text())['evaluation']
     limits, gen = build_submission_limits()
