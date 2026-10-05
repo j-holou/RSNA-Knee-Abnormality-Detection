@@ -1,0 +1,7 @@
+data/
+results/
+.cache/
+.venv/
+.testbase/
+__pycache__/
+*.zip
