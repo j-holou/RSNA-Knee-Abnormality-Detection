@@ -1,4 +1,4 @@
-"""Run Phase 2 verification with each task's reference patch.
+"""Run Phase 2 verification with reference patches, no patch, or an agent run's patches.
 
 Confirms the local harness setup can build, patch and test a task without a
 model. A task that fails here cannot be solved by any agent locally.
@@ -78,6 +78,8 @@ async def main() -> None:
     ap.add_argument('--data', type=Path, default=Path('data'))
     ap.add_argument('--task-ids', nargs='*')
     ap.add_argument('--empty', action='store_true', help='verify with no patch (should fail)')
+    ap.add_argument('--patches', type=Path,
+                    help='verify agent patches from a results dir (<dir>/patches/<id>.patch) instead')
     a = ap.parse_args()
 
     cfg = EvalConfig(
@@ -100,8 +102,13 @@ async def main() -> None:
         if not snap.exists():
             print(json.dumps({'id': t.instance_id, 'skipped': 'no snapshot'}))
             continue
+        if a.patches:
+            pf = a.patches / 'patches' / f'{t.instance_id}.patch'
+            agent_patch = pf.read_text() if pf.exists() else ''
+        else:
+            agent_patch = '' if a.empty else t.patch
         res = await verify_task(sandbox, cfg, t, snap, base_snapshot_path=base, patch_path=patch,
-                                agent_patch='' if a.empty else t.patch)
+                                agent_patch=agent_patch)
         print(json.dumps({'id': t.instance_id, 'resolved': res.resolved, 'error': res.error,
                           'seconds': round(res.duration_seconds, 1)}))
         print((res.test_output or '')[-3000:])

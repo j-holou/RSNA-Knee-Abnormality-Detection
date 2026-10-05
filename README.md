@@ -16,6 +16,10 @@ tasks whose tests pass after the agent's patch.
 - `submission/` — the agent we submit (`agent.yaml` at the root). Starts as the official
   sample, without its placeholder LoRA adapters.
 - `scripts/setup_env.sh` — installs the official harness and downloads the competition data.
+- `eval/` — task lists: the sound public tasks and our fixed 24-task dev set.
+- `scripts/push_eval.py` — runs `submission/` on a task list in a private Kaggle kernel on
+  the 4x L4 GPUs (same model server settings as the scorer); fetch results with
+  `kaggle kernels output`.
 - `scripts/verify_gold.py` — runs the harness's Phase 2 verification with each task's
   reference patch (or `--empty` for none), no model needed. Use it to find tasks that are
   unsolvable locally before blaming the agent.
