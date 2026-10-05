@@ -62,6 +62,11 @@ def main() -> None:
         'enable_gpu': True,
         'enable_internet': False,
         'machine_shape': 'NvidiaL4',
+        # The wheelhouse is built for Python 3.12; the default image is 3.13.
+        # This is the image the official "Getting Started" notebook is pinned to.
+        'docker_image': 'gcr.io/kaggle-private-byod/python@sha256:'
+                        '37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461',
+        'docker_image_pinning_type': 'original',
         'dataset_sources': ['metric/gemma-4-developer-agent-wheelhouse'],
         'competition_sources': ['gemma-4-developer-agent'],
         'kernel_sources': [],
