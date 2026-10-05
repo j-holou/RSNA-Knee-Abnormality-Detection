@@ -77,6 +77,8 @@ def main() -> None:
     ap.add_argument('--model', default='gemini/gemma-4-31b-it', help='LiteLLM model id')
     ap.add_argument('--concurrency', type=int, default=1)
     ap.add_argument('--time-minutes', type=float, help='override max_time_minutes from eval_config.yaml')
+    ap.add_argument('--resume', action='store_true',
+                    help='skip tasks finished by earlier runs of --name (each run goes to its own part_N)')
     a = ap.parse_args()
     if 'GEMINI_API_KEY' not in os.environ:
         raise SystemExit('GEMINI_API_KEY is not set')
@@ -102,6 +104,15 @@ def main() -> None:
     limits, gen = build_submission_limits()
     task_ids = [t for t in a.tasks.read_text().split() if t]
     out = ROOT / 'results' / a.name
+    if a.resume:
+        parts = sorted(out.glob('part_*'))
+        done = {json.loads(l)['instance_id'] for p in parts if (p / 'task_results.jsonl').exists()
+                for l in (p / 'task_results.jsonl').read_text().splitlines() if l.strip()}
+        task_ids = [t for t in task_ids if t not in done]
+        out = out / f'part_{len(parts)}'
+        if not task_ids:
+            merge_parts(out.parent)
+            return
     config = EvalConfig(
         tasks_path=DATA / 'tasks.jsonl', snapshots_dir=DATA / 'snapshots', results_dir=out,
         submission_dir=a.submission, models=models, sandbox='subprocess',
@@ -124,6 +135,22 @@ def main() -> None:
                'resolved': result.resolved, 'resolution_rate': result.resolution_rate}
     (out / 'run_summary.json').write_text(json.dumps(summary, indent=2))
     print(json.dumps(summary))
+    if a.resume:
+        merge_parts(out.parent)
+
+
+def merge_parts(run_dir: Path) -> None:
+    """Collect task_results.jsonl and patches from all part_N dirs into run_dir."""
+    rows = []
+    (run_dir / 'patches').mkdir(parents=True, exist_ok=True)
+    for p in sorted(run_dir.glob('part_*')):
+        f = p / 'task_results.jsonl'
+        if f.exists():
+            rows += [l for l in f.read_text().splitlines() if l.strip()]
+        for pf in (p / 'patches').glob('*.patch'):
+            (run_dir / 'patches' / pf.name).write_text(pf.read_text())
+    (run_dir / 'task_results.jsonl').write_text('\n'.join(rows) + '\n')
+    print(f'merged {len(rows)} task results into {run_dir}')
 
 
 if __name__ == '__main__':
