@@ -27,22 +27,23 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 
 CALLS = [
+    # finder
     ('list_skills', {}),
     ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/locate.py',
                           'args': {'query': 'Table column width "overflow" Console.print'}}),
-    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/find_tests.py',
-                          'args': {'target': 'rich/table.py'}}),
-    ('run_command', {'command': 'cd /workspace && echo "x = (" >> rich/table.py && echo x > repro.py'}),
-    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/check_patch.py', 'args': {'clean': 'true'}}),
-    ('run_command', {'command': 'cd /workspace && git checkout rich/table.py && echo "# fixed" >> rich/table.py'}),
+    ('TEXT', 'FILES: rich/table.py:1-5\nROOT CAUSE: smoke.\nCHANGE: add a comment.\nCHECK: python -c "import rich"'),
+    # fixer
+    ('run_command', {'command': 'cd /workspace && echo "# fixed" >> rich/table.py && echo x > repro.py'}),
     ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/check_patch.py',
                           'args': {'clean': 'true'}}),
     ('submit_patch', {}),
 ]
 
 
+STEP = [0]  # shared: ADK copies the model object for each agent
+
+
 class ScriptedLlm(BaseLlm):
-    step: int = 0
 
     async def generate_content_async(self, llm_request, stream: bool = False) -> AsyncGenerator[LlmResponse, None]:
         # Print the previous tool result so the run shows what each call returned.
@@ -51,10 +52,19 @@ class ScriptedLlm(BaseLlm):
             if part.function_response:
                 print(f'--- {part.function_response.name} ->')
                 print(json.dumps(part.function_response.response, default=str)[:3000])
-        if self.step < len(CALLS):
-            name, args = CALLS[self.step]
-            self.step += 1
-            content = types.Content(role='model', parts=[types.Part(function_call=types.FunctionCall(name=name, args=args))])
+        si = str(getattr(llm_request.config, 'system_instruction', '') or '')
+        print(f'>>> call step={STEP[0]} agent={si[:30]!r} ncontents={len(llm_request.contents)}')
+        if '<brief>' in si and not getattr(self, '_shown', False):
+            object.__setattr__(self, '_shown', True)
+            print('--- fixer system instruction (excerpt) ->')
+            print(si[si.index('<issue>'):si.index('</brief>')+8])
+        if STEP[0] < len(CALLS):
+            name, args = CALLS[STEP[0]]
+            STEP[0] += 1
+            if name == 'TEXT':
+                content = types.Content(role='model', parts=[types.Part(text=args)])
+            else:
+                content = types.Content(role='model', parts=[types.Part(function_call=types.FunctionCall(name=name, args=args))])
         else:
             content = types.Content(role='model', parts=[types.Part(text='done')])
         yield LlmResponse(content=content)
