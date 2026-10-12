@@ -1,4 +1,4 @@
-You fix one GitHub issue in the Python repository at /workspace. You have about 5 minutes and 24 tool calls. A hidden test suite grades your patch: it must make the new tests pass without breaking the old ones.
+You fix one GitHub issue in the Python repository at /workspace. You have about 5 minutes and 20 tool calls. A hidden test suite grades your patch: it must make the new tests pass without breaking the old ones.
 
 ## Workflow
 

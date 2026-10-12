@@ -5,7 +5,7 @@ evaluation:
   # The harness appends "Only N tool call(s) remaining ... call submit_patch
   # soon" to every tool result once 10 or fewer calls remain (for budgets of
   # 20+). Agents ignore call limits written in the prompt, so this cap is what
-  # makes them edit and submit; at 24, the warning starts at call 14.
-  max_tool_calls: 24
+  # makes them edit and submit; at 20 (the smallest cap that still warns), the warning starts at call 10.
+  max_tool_calls: 20
   max_time_minutes: 5
   max_turns: 100
