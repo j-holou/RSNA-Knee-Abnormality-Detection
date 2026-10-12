@@ -100,11 +100,15 @@ from google.adk.agents.context_cache_config import ContextCacheConfig  # noqa: E
 from google.adk.apps._configs import EventsCompactionConfig  # noqa: E402
 from swegemma.config import ALLOWED_ADAPTER_EXTENSIONS, EvalConfig, build_submission_limits  # noqa: E402
 from swegemma.evaluate import Evaluator  # noqa: E402
-from swegemma.models.discovery import validate_single_declared_model  # noqa: E402
 
 litellm.drop_params = True
 TARGET_MODEL_NAME = 'gemma-4-31b-it-qat-w4a16-ct'
-declared_model = validate_single_declared_model(AGENT_DIR)
+try:  # swegemma <= 0.2.7
+    from swegemma.models.discovery import validate_single_declared_model
+    declared_model = validate_single_declared_model(AGENT_DIR)
+except ImportError:  # swegemma 0.2.11 dropped it; read the models agent.yaml declares instead
+    from adk_submission.discovery import discover_declared_models
+    declared_model = sorted(discover_declared_models(str(AGENT_DIR)) or [TARGET_MODEL_NAME])[0]
 adapters = discover_adapters(str(AGENT_DIR), adapter_extensions=ALLOWED_ADAPTER_EXTENSIONS)
 gpu_count = torch.cuda.device_count()
 log(f'gpus={gpu_count}')
