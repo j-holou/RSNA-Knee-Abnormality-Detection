@@ -39,6 +39,10 @@ def main() -> None:
     }
     if st['gpu']:
         meta['machine_shape'] = 'NvidiaL4'
+        # Same image as the eval kernels (the default image once gave 2x T4 instead of 4x L4).
+        meta['docker_image'] = ('gcr.io/kaggle-private-byod/python@sha256:'
+                                '37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461')
+        meta['docker_image_pinning_type'] = 'original'
     with tempfile.TemporaryDirectory() as tmp:
         (Path(tmp) / st['code']).write_text((ROOT / 'scripts' / st['code']).read_text(encoding='utf-8'))
         (Path(tmp) / 'kernel-metadata.json').write_text(json.dumps(meta, indent=2))

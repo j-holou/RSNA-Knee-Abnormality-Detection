@@ -48,7 +48,11 @@ bnb = transformers.BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type='nf
                                       bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
 n_gpu = torch.cuda.device_count()
 max_memory = {i: '17GiB' for i in range(n_gpu)}  # leave room for activations
-load = dict(quantization_config=bnb, device_map='auto', max_memory=max_memory, torch_dtype=torch.bfloat16)
+# sdpa: eager attention materializes seq x seq scores per head (6.6 GiB at 10k tokens).
+load = dict(quantization_config=bnb, device_map='auto', max_memory=max_memory, dtype=torch.bfloat16,
+            attn_implementation='sdpa')
+if n_gpu < 4 or torch.cuda.get_device_properties(0).total_memory < 20 * 2**30:
+    raise SystemExit(f'needs 4x L4 (got {n_gpu} x {torch.cuda.get_device_properties(0).name}); Kaggle gave a different machine')
 try:  # the full multimodal class keeps weight names as model.language_model.*, which vLLM expects
     model = transformers.AutoModelForImageTextToText.from_pretrained(model_dir, **load)
 except Exception as e:
