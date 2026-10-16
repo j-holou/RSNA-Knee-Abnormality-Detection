@@ -1,6 +1,6 @@
 ---
 name: swe-tools
-description: Fast helpers for fixing an issue in /workspace. locate.py ranks the source files to edit, find_tests.py finds existing tests for a file or symbol, check_patch.py reviews the diff before submit_patch.
+description: Fast helpers for fixing an issue in /workspace. locate.py ranks the source files to edit, lookup.py shows definitions and uses of several names in one call, replace_lines.py edits by line numbers when edit_file fails, find_tests.py finds existing tests, check_patch.py reviews the diff before submit_patch.
 ---
 
 # swe-tools
@@ -13,6 +13,19 @@ Ranks the non-test source files most likely to need the fix.
 - `args={"query": "<issue title + key names, error text, quoted strings>"}`
 - optional `"top": 8`
 Prints each file with its score and the matching `def`/`class` lines. Read the top one or two files next.
+
+## scripts/lookup.py
+One call instead of many greps. For each comma-separated name prints its definitions with
+numbered code, and where it is used.
+- `args={"names": "Console.print, soft_wrap, 'exact error text'"}`
+- `Class.method` finds the method inside that class; a quoted entry is searched as literal text.
+- optional `"file": "rich/console.py"` limits the search to one file or directory.
+
+## scripts/replace_lines.py
+Use when edit_file fails to match. Replaces lines start..end (numbers from lookup.py or
+read_file) with the new code, written exactly as given including indentation.
+- `args={"file": "rich/console.py", "start": 120, "end": 124, "text": "<new lines>"}`
+Refuses changes that break Python syntax and prints the region before and after.
 
 ## scripts/find_tests.py
 Finds existing tests that exercise a file or symbol and prints a ready pytest command.
