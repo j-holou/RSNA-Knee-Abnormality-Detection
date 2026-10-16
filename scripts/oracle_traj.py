@@ -13,6 +13,7 @@ render with Gemma's chat template.
 import argparse
 import asyncio
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -26,7 +27,7 @@ from swegemma.config import EvalConfig, build_submission_limits
 from swegemma.evaluate import Evaluator
 
 ROOT = Path(__file__).resolve().parent.parent
-DATA = ROOT / 'data'
+DATA = Path(os.environ.get('ORACLE_DATA', ROOT / 'data'))
 CONTEXT = 2  # context lines kept around each hunk's changed lines in old_string
 
 
@@ -186,7 +187,7 @@ def main() -> None:
     ids = set(a.tasks.read_text().split())
     tasks = [json.loads(l) for l in (DATA / 'tasks.jsonl').read_text().splitlines()]
     tasks = [t for t in tasks if t['instance_id'] in ids]
-    have = {p.stem for p in (DATA / 'snapshots').glob('*.tgz')}
+    have = {p.name.split('.')[0] for p in (DATA / 'snapshots').iterdir()}
     a.out.mkdir(parents=True, exist_ok=True)
     stats = {}
     with open(a.out / 'trajectories.jsonl', 'a') as fout, open(a.out / 'status.jsonl', 'a') as fstat:
