@@ -1,6 +1,7 @@
 """Push the LoRA pipeline kernels to Kaggle.
 
     python scripts/push_lora.py --stage prep     # CPU: render trajectories -> janholoubek/gemma-lora-prep
+    python scripts/push_lora.py --stage train    # 4x L4: QLoRA training   -> janholoubek/gemma-lora-train
 
 The prep kernel mounts the gemma-oracle-traj output and the bf16 QAT twin of the scored
 model (google/gemma-4/transformers/gemma-4-31b-it-qat-q4_0-unquantized/2).
@@ -16,6 +17,8 @@ from push_eval import ROOT, kaggle_username
 STAGES = {
     'prep': {'code': 'kaggle_lora_prep.py', 'gpu': False,
              'kernel_sources': ['{user}/gemma-oracle-traj']},
+    'train': {'code': 'kaggle_lora_train.py', 'gpu': True,
+              'kernel_sources': ['{user}/gemma-lora-prep']},
 }
 MODEL = 'google/gemma-4/transformers/gemma-4-31b-it-qat-q4_0-unquantized/2'
 

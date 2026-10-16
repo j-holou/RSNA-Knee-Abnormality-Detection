@@ -33,6 +33,23 @@ print('trajectories:', traj_path, '\nmodel:', model_dir, flush=True)
 tok = AutoTokenizer.from_pretrained(model_dir)
 
 
+def thought_for(name: str, args: dict) -> str:
+    """Short synthetic reasoning placed before each call. It is masked out of the loss:
+    the model keeps producing its own thoughts and only learns which call follows."""
+    if name == 'run_skill_script' and 'locate' in str(args.get('file_path')):
+        return 'First I will find the source files most related to the issue.'
+    if name == 'read_file':
+        return (f"The fix most likely belongs in {args.get('filepath')}. I will read lines "
+                f"{args.get('start_line')}-{args.get('end_line')} around the relevant code.")
+    if name in ('edit_file', 'write_file'):
+        return f"I have seen enough of {args.get('filepath')} to make the change. Editing now instead of searching further."
+    if name == 'run_skill_script':
+        return 'The edit is in place. I will check the patch before submitting.'
+    if name == 'submit_patch':
+        return 'The patch is ready, so I will submit it.'
+    return 'Next step.'
+
+
 def to_openai(rec: dict):
     """genai contents -> OpenAI-style messages + tools, as LiteLLM sends them to vLLM."""
     def schema(s):
@@ -53,9 +70,11 @@ def to_openai(rec: dict):
             elif 'function_call' in p:
                 n += 1
                 fc = p['function_call']
-                msgs.append({'role': 'assistant', 'content': '', 'tool_calls': [{
+                msgs.append({'role': 'assistant', 'content': '', 'reasoning_content': thought_for(fc['name'], fc.get('args', {})),
+                             'tool_calls': [{
                     'id': f'call_{n}', 'type': 'function',
-                    'function': {'name': fc['name'], 'arguments': json.dumps(fc.get('args', {}))}}]})
+                    # vLLM parses the JSON string into a dict before rendering the template.
+                    'function': {'name': fc['name'], 'arguments': fc.get('args', {})}}]})
             elif 'function_response' in p:
                 fr = p['function_response']
                 msgs.append({'role': 'tool', 'tool_call_id': f'call_{n}', 'name': fr['name'],
@@ -64,7 +83,8 @@ def to_openai(rec: dict):
 
 
 def render(msgs, tools) -> str:
-    return tok.apply_chat_template(msgs, tools=tools, tokenize=False)
+    # Thinking is on when scored (include_thoughts: true), which adds <|think|> to the system turn.
+    return tok.apply_chat_template(msgs, tools=tools, tokenize=False, enable_thinking=True)
 
 
 out_dir = Path('/kaggle/working/lora_data')
@@ -84,13 +104,22 @@ with open(out_dir / 'train.jsonl', 'w') as ftrain, open(out_dir / 'holdout_ids.t
             text = render(msgs[:k], tools)
             if not text.startswith(prev):
                 raise SystemExit(f'template is not prefix-stable at message {k} of {rec["instance_id"]}')
-            piece = tok(text[len(prev):], add_special_tokens=False)['input_ids']
-            ids += piece
-            labels += piece if msgs[k - 1]['role'] == 'assistant' else [-100] * len(piece)
+            new = text[len(prev):]
+            if msgs[k - 1]['role'] == 'assistant' and '<channel|>' in new:
+                # Mask the turn header and the synthetic thought; train on the call that follows.
+                head, call = new.rsplit('<channel|>', 1)
+                masked = tok(head + '<channel|>', add_special_tokens=False)['input_ids']
+                trained = tok(call, add_special_tokens=False)['input_ids']
+                ids += masked + trained
+                labels += [-100] * len(masked) + trained
+            else:
+                piece = tok(new, add_special_tokens=False)['input_ids']
+                ids += piece
+                labels += piece if msgs[k - 1]['role'] == 'assistant' else [-100] * len(piece)
             prev = text
         if i == 0:
             print('=' * 30, 'RENDERED EXAMPLE (first 6000 chars)')
-            print(prev[:6000])
+            print(prev[:1500]); print('...'); print(prev[-2500:])
             print('=' * 30, 'TRAINED SPANS (first 3)')
             spans, cur = [], []
             for t, l in zip(ids, labels):
