@@ -43,6 +43,11 @@ def main() -> None:
         meta['docker_image'] = ('gcr.io/kaggle-private-byod/python@sha256:'
                                 '37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461')
         meta['docker_image_pinning_type'] = 'original'
+        # 4x L4 seems tied to the competition: without it attached Kaggle gave 2x T4 twice.
+        # Competition kernels must run offline, so packages come from the wheelhouse.
+        meta['competition_sources'] = ['gemma-4-developer-agent']
+        meta['dataset_sources'] = ['metric/gemma-4-developer-agent-wheelhouse']
+        meta['enable_internet'] = False
     with tempfile.TemporaryDirectory() as tmp:
         (Path(tmp) / st['code']).write_text((ROOT / 'scripts' / st['code']).read_text(encoding='utf-8'))
         (Path(tmp) / 'kernel-metadata.json').write_text(json.dumps(meta, indent=2))

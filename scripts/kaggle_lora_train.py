@@ -18,8 +18,11 @@ import sys
 import time
 from pathlib import Path
 
-subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '-U',
-                'transformers', 'peft', 'bitsandbytes', 'accelerate'], check=True)
+# Offline: the competition's 4x L4 machine runs without internet. The image has peft and
+# accelerate; the competition wheelhouse has bitsandbytes and a newer transformers.
+WHEELS = glob.glob('/kaggle/input/**/gemma-4-developer-agent-wheelhouse', recursive=True)[0]
+subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '--no-index', '--find-links', WHEELS,
+                'transformers==5.13.1', 'bitsandbytes'], check=True)
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 import torch  # noqa: E402
