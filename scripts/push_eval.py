@@ -34,6 +34,8 @@ def main() -> None:
     ap.add_argument('--name', required=True, help='run name, used in the kernel slug')
     ap.add_argument('--tasks', type=Path, default=ROOT / 'eval/dev24.txt')
     ap.add_argument('--submission', type=Path, default=ROOT / 'submission')
+    ap.add_argument('--adapter-kernel', help='kernel whose output holds adapters/<name>/ (e.g. user/gemma-lora-train)')
+    ap.add_argument('--adapter-name', default='edit_early')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
 
@@ -44,11 +46,15 @@ def main() -> None:
                 raise SystemExit(f'{path}: only text files can be embedded (no adapters yet)')
             files[str(path.relative_to(a.submission))] = path.read_text(encoding='utf-8')
     task_ids = [t for t in a.tasks.read_text().split() if t]
+    if a.adapter_kernel:  # the root agent uses the adapter; the files are copied in on Kaggle
+        files['agent.yaml'] = files['agent.yaml'].rstrip('\n') + f'\nadapter: {a.adapter_name}\n'
 
     source = (ROOT / 'scripts/kaggle_eval.py').read_text(encoding='utf-8')
     source = source.replace('SUBMISSION_FILES: dict[str, str] = {}', f'SUBMISSION_FILES: dict[str, str] = {files!r}', 1)
     source = source.replace('TASK_IDS: list[str] = []', f'TASK_IDS: list[str] = {task_ids!r}', 1)
     source = source.replace("RUN_NAME = ''", f'RUN_NAME = {a.name!r}', 1)
+    if a.adapter_kernel:
+        source = source.replace("ADAPTER = ''", f'ADAPTER = {a.adapter_name!r}', 1)
 
     slug = f'gemma-eval-{a.name}'
     user = kaggle_username()
@@ -69,7 +75,7 @@ def main() -> None:
         'docker_image_pinning_type': 'original',
         'dataset_sources': ['metric/gemma-4-developer-agent-wheelhouse'],
         'competition_sources': ['gemma-4-developer-agent'],
-        'kernel_sources': [],
+        'kernel_sources': [a.adapter_kernel] if a.adapter_kernel else [],
         'model_sources': ['google/gemma-4/Other/gemma-4-31b-it-qat-w4a16-ct/2'],
     }
     with tempfile.TemporaryDirectory() as tmp:

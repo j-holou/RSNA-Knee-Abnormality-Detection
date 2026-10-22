@@ -20,6 +20,7 @@ from pathlib import Path
 SUBMISSION_FILES: dict[str, str] = {}  # filled in by push_eval.py
 TASK_IDS: list[str] = []  # filled in by push_eval.py
 RUN_NAME = ''  # filled in by push_eval.py
+ADAPTER = ''  # filled in by push_eval.py --adapter-kernel: PEFT dir name under the mounted kernel output
 
 os.environ['LITELLM_LOCAL_MODEL_COST_MAP'] = 'True'
 os.environ['TRANSFORMERS_NO_TF'] = '1'
@@ -80,6 +81,16 @@ for rel, content in SUBMISSION_FILES.items():
     path = AGENT_DIR / rel
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding='utf-8')
+if ADAPTER:  # copy the trained PEFT adapter from the mounted training kernel's output
+    import shutil
+    src = Path(sorted(glob.glob(f'/kaggle/input/**/adapters/{ADAPTER}/adapter_config.json', recursive=True))[0]).parent
+    shutil.copytree(src, AGENT_DIR / 'adapters' / ADAPTER, ignore=shutil.ignore_patterns('README.md'))
+    cfg_path = AGENT_DIR / 'adapters' / ADAPTER / 'adapter_config.json'
+    cfg = json.loads(cfg_path.read_text())
+    if isinstance(cfg.get('target_modules'), str):  # PEFT regex -> plain module names for vLLM
+        cfg['target_modules'] = ['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj']
+        cfg_path.write_text(json.dumps(cfg, indent=2))
+    log(f'adapter {ADAPTER} from {src}: {sorted(p.name for p in (AGENT_DIR / "adapters" / ADAPTER).iterdir())}')
 
 DATA_DIR = find_dir(
     '/kaggle/input/competitions/gemma-4-developer-agent',
