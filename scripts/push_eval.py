@@ -52,6 +52,7 @@ def main() -> None:
     source = (ROOT / 'scripts/kaggle_eval.py').read_text(encoding='utf-8')
     source = source.replace('SUBMISSION_FILES: dict[str, str] = {}', f'SUBMISSION_FILES: dict[str, str] = {files!r}', 1)
     source = source.replace('TASK_IDS: list[str] = []', f'TASK_IDS: list[str] = {task_ids!r}', 1)
+    source = source.replace('# __SCORER_ENV__', (ROOT / 'scripts/scorer_env.py').read_text(encoding='utf-8'), 1)
     source = source.replace("RUN_NAME = ''", f'RUN_NAME = {a.name!r}', 1)
     if a.adapter_kernel:
         source = source.replace("ADAPTER = ''", f'ADAPTER = {a.adapter_name!r}', 1)
@@ -73,7 +74,10 @@ def main() -> None:
         'docker_image': 'gcr.io/kaggle-private-byod/python@sha256:'
                         '37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461',
         'docker_image_pinning_type': 'original',
-        'dataset_sources': ['metric/gemma-4-developer-agent-wheelhouse'],
+        # The last two hold the scorer-like sandbox's test packages and Python 3.13 (scorer_env.py).
+        'dataset_sources': ['metric/gemma-4-developer-agent-wheelhouse',
+                            'zbigniewkirchner/gemma-4-agent-local-eval-wheels',
+                            'zbigniewkirchner/gemma-4-agent-local-eval-pythons'],
         'competition_sources': ['gemma-4-developer-agent'],
         'kernel_sources': [a.adapter_kernel] if a.adapter_kernel else [],
         'model_sources': ['google/gemma-4/Other/gemma-4-31b-it-qat-w4a16-ct/2'],

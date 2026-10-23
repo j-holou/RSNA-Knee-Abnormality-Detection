@@ -25,6 +25,7 @@ def main() -> None:
     task_ids = sorted({t for f in a.tasks for t in f.read_text().split() if t})
     user = kaggle_username()
     src = (ROOT / 'scripts/kaggle_regrade.py').read_text(encoding='utf-8')
+    src = src.replace('# __SCORER_ENV__', (ROOT / 'scripts/scorer_env.py').read_text(encoding='utf-8'), 1)
     src = src.replace('RUNS: list[str] = []', f'RUNS: list[str] = {a.runs!r}', 1)
     src = src.replace('TASK_IDS: list[str] = []', f'TASK_IDS: list[str] = {task_ids!r}', 1)
     meta = {

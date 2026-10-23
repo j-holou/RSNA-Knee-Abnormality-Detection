@@ -112,6 +112,8 @@ from google.adk.apps._configs import EventsCompactionConfig  # noqa: E402
 from swegemma.config import ALLOWED_ADAPTER_EXTENSIONS, EvalConfig, build_submission_limits  # noqa: E402
 from swegemma.evaluate import Evaluator  # noqa: E402
 
+# __SCORER_ENV__
+
 litellm.drop_params = True
 TARGET_MODEL_NAME = 'gemma-4-31b-it-qat-w4a16-ct'
 try:  # swegemma <= 0.2.7
@@ -177,7 +179,22 @@ config = EvalConfig(
     wheels_dir=DATA_DIR / 'wheels',
     display_mode='quiet',
 )
-result = asyncio.run(Evaluator(config).run())
+from swegemma.sandbox.subprocess import SubprocessManager  # noqa: E402
+
+
+class ScorerLikeEvaluator(Evaluator):
+    """Records the running task for the scorer-like sandbox hook (tasks run one at a time)."""
+
+    async def evaluate_task(self, task, *args, **kwargs):
+        CURRENT['id'] = task.instance_id
+        return await super().evaluate_task(task, *args, **kwargs)
+
+
+evaluator = ScorerLikeEvaluator(config)
+# A clean venv per sandbox, as in the harness image; setup_env fills it (agent and grading phase).
+evaluator.sandbox = evaluator.docker = SubprocessManager(timeout_seconds=config.timeout_seconds,
+                                                         system_site_packages=False)
+result = asyncio.run(evaluator.run())
 log('evaluation done')
 
 summary = {
