@@ -1,6 +1,6 @@
 ---
 name: swe-tools
-description: Fast helpers for fixing an issue in /workspace. locate.py ranks the source files to edit, lookup.py shows definitions and uses of several names in one call, replace_lines.py edits by line numbers when edit_file fails, find_tests.py finds existing tests, check_patch.py reviews the diff before submit_patch.
+description: Fast helpers for fixing an issue in /workspace. locate.py ranks the source files to edit, repro.py runs and reruns a reproduction of the bug, lookup.py shows definitions and uses of several names in one call, replace_lines.py edits by line numbers when edit_file fails, find_tests.py finds existing tests, check_patch.py reviews the diff before submit_patch.
 ---
 
 # swe-tools
@@ -13,6 +13,12 @@ Ranks the non-test source files most likely to need the fix.
 - `args={"query": "<issue title + key names, error text, quoted strings>"}`
 - optional `"top": 8`
 Prints each file with its score and the matching `def`/`class` lines. Read the top one or two files next.
+
+## scripts/repro.py
+Saves a short reproduction script to /tmp and runs it from /workspace (60 s limit).
+- `args={"code": "<python code that asserts the expected behavior, ending with print(\"REPRO OK\")>"}`
+- `args={"rerun": "true"}` runs the saved script again after your edit.
+Prints the output and `RESULT: PASS` or `RESULT: FAIL`. Before the fix it should fail; after the fix it should pass.
 
 ## scripts/lookup.py
 One call instead of many greps. For each comma-separated name prints its definitions with
