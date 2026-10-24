@@ -19,6 +19,7 @@ KERNEL = r'''
 import glob, json, os
 from pathlib import Path
 RUNS = __RUNS__
+SHOW_OBS = __SHOW_OBS__
 for run in RUNS:
     hits = glob.glob(f"/kaggle/input/**/gemma-eval-{run}/results", recursive=True) + \
            glob.glob(f"/kaggle/input/gemma-eval-{run}/results")
@@ -43,12 +44,14 @@ for run in RUNS:
                 m = s.get("metrics") or {}
                 out.append(f"{t:6.0f}s +{t-prev:4.0f} {tc.get('function_name')} {args} obs={obs} {json.dumps(m)[:80] if m else ''}")
                 prev = t
+                if SHOW_OBS and tc.get('function_name') == 'run_command':
+                    out.append("        OBS " + repr(str((s.get("observation") or {}).get("content", ""))[:240]))
             if not s.get("tool_calls") and s.get("source") == "agent":
                 t = ex.get("elapsed_s", 0) or 0
                 out.append(f"{t:6.0f}s +{t-prev:4.0f} TEXT {str(s.get('message',''))[:100]!r}")
                 prev = t
         print(f"TRACE {run} {tid} steps={len(out)} metrics={json.dumps(d.get('final_metrics'))}")
-        for o in out[:40]:
+        for o in out[:80]:
             print("   ", o)
     for pf in sorted((res / "patches").glob("*.patch")):
         txt = pf.read_text()
@@ -58,7 +61,9 @@ for run in RUNS:
 
 
 def main() -> None:
-    runs = sys.argv[1:] or ['baseline', 'v1', 'v2']
+    args = sys.argv[1:]
+    show_obs = '--obs' in args  # also print the start of each run_command output
+    runs = [a for a in args if a != '--obs'] or ['baseline', 'v1', 'v2']
     user = os.environ.get('KAGGLE_USERNAME', 'janholoubek')
     meta = {
         'id': f'{user}/gemma-eval-digest', 'title': 'gemma-eval-digest', 'code_file': 'digest.py',
@@ -68,7 +73,7 @@ def main() -> None:
         'dataset_sources': [], 'competition_sources': [],
     }
     with tempfile.TemporaryDirectory() as tmp:
-        (Path(tmp) / 'digest.py').write_text(KERNEL.replace('__RUNS__', repr(runs)))
+        (Path(tmp) / 'digest.py').write_text(KERNEL.replace('__RUNS__', repr(runs)).replace('__SHOW_OBS__', repr(show_obs)))
         (Path(tmp) / 'kernel-metadata.json').write_text(json.dumps(meta, indent=2))
         subprocess.run(['kaggle', 'kernels', 'push', '-p', tmp], check=True)
 
