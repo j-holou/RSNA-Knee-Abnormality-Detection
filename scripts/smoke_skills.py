@@ -27,13 +27,12 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 
 CALLS = [
-    # finder
-    ('list_skills', {}),
-    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/locate.py',
-                          'args': {'query': 'Table column width "overflow" Console.print'}}),
-    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/lookup.py',
-                          'args': {'names': "Table.add_row, escape, 'Unable to render'"}}),
-    ('read_file', {'filepath': 'rich/markup.py', 'start_line': 1, 'end_line': 5}),
+    # finder (5th call must be refused by the budget)
+    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'locate', 'query': 'escape trailing backslash markup'}}),
+    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'lookup', 'names': 'escape'}}),
+    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'read', 'file': 'rich/markup.py', 'start': 48, 'end': 70}}),
+    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'lookup', 'names': 'render'}}),
+    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'lookup', 'names': 'Text'}}),
     ('TEXT', 'FILES: rich/table.py:1-5\nROOT CAUSE: smoke.\nCHANGE: add a comment.\nCHECK: python -c "import rich"'),
     # fixer
     ('run_command', {'command': 'cd /workspace && echo "# fixed" >> rich/table.py && echo x > repro.py'}),
