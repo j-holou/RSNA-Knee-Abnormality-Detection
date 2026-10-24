@@ -1,16 +1,13 @@
 name: fixer
 model: gemma-4-31b-it-qat-w4a16-ct
-description: Applies the brief with a fresh context, checks it and submits the patch.
+description: Applies the brief without reading any code, then submits the patch.
 instruction: !include prompts/fixer.md
-# Start from the issue and the finder's brief only, so the investigation does not fill the context.
+# v12c: the fixer cannot read files or run commands; it edits straight from the brief.
 include_contents: none
 tools:
-  - run_command
-  - read_file
   - edit_file
-  - write_file
   - get_status
   - submit_patch
 skills:
-  - skills/swe-tools
+  - skills/fixer-tools
 generate_content_config: !include configs/sampling_fixer.yaml
