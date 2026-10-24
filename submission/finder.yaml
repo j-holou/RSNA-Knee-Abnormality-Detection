@@ -1,0 +1,10 @@
+name: finder
+model: gemma-4-31b-it-qat-w4a16-ct
+description: Read-only investigator that writes a precise fix brief.
+instruction: !include prompts/finder.md
+output_key: findings
+tools:
+  - read_file
+skills:
+  - skills/swe-tools
+generate_content_config: !include configs/sampling_finder.yaml

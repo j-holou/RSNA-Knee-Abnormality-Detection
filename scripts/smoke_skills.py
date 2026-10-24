@@ -33,11 +33,7 @@ CALLS = [
                           'args': {'query': 'Table column width "overflow" Console.print'}}),
     ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/lookup.py',
                           'args': {'names': "Table.add_row, escape, 'Unable to render'"}}),
-    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/replace_lines.py',
-                          'args': {'file': 'rich/markup.py', 'start': 1, 'end': 0, 'text': '# smoke: inserted\n'}}),
-    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/repro.py',
-                          'args': {'code': 'import rich\nassert rich.print\nprint("REPRO OK")'}}),
-    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/repro.py', 'args': {'rerun': 'true'}}),
+    ('read_file', {'filepath': 'rich/markup.py', 'start_line': 1, 'end_line': 5}),
     ('TEXT', 'FILES: rich/table.py:1-5\nROOT CAUSE: smoke.\nCHANGE: add a comment.\nCHECK: python -c "import rich"'),
     # fixer
     ('run_command', {'command': 'cd /workspace && echo "# fixed" >> rich/table.py && echo x > repro.py'}),
