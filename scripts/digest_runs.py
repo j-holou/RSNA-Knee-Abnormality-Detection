@@ -44,7 +44,7 @@ for run in RUNS:
                 m = s.get("metrics") or {}
                 out.append(f"{t:6.0f}s +{t-prev:4.0f} {tc.get('function_name')} {args} obs={obs} {json.dumps(m)[:80] if m else ''}")
                 prev = t
-                if SHOW_OBS and tc.get('function_name') == 'run_command':
+                if SHOW_OBS and tc.get('function_name') in ('run_command', 'edit_file', 'run_skill_script'):
                     out.append("        OBS " + repr(str((s.get("observation") or {}).get("content", ""))[:240]))
             if not s.get("tool_calls") and s.get("source") == "agent":
                 t = ex.get("elapsed_s", 0) or 0
