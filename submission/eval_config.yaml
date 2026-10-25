@@ -1,4 +1,4 @@
-# Per-task budgets for the scoring run (v12: shared by finder and fixer).
+# Per-task budgets for the scoring run. v7 tried the public 8 min / 28 calls and
 # solved no extra tasks (11/48 vs 13/48), so v8 is back to 5 min / 20 calls.
 evaluation:
   # Also bounds the grader's pytest run: some test modules need ~100-120 s, so

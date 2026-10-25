@@ -1,6 +1,11 @@
-agent_class: SequentialAgent
-name: swe_pipeline
-description: A read-only finder writes a fix brief; a fixer with a fresh context and more thinking applies it and submits.
-sub_agents:
-  - config_path: finder.yaml
-  - config_path: fixer.yaml
+name: swe_agent
+model: gemma-4-31b-it-qat-w4a16-ct
+instruction: !include prompts/system.md
+tools:
+  - run_command
+  - read_file
+  - get_status
+  - submit_patch
+skills:
+  - skills/swe-tools
+generate_content_config: !include configs/sampling.yaml

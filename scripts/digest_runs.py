@@ -46,7 +46,7 @@ for run in RUNS:
                 prev = t
                 if SHOW_OBS and tc.get('function_name') == 'edit_file':
                     fa = tc.get('arguments', {}) or {}
-                    out.append("        ARGS " + json.dumps({k: (str(v)[:160] + f'...[{len(str(v))}]') for k, v in fa.items()}))
+                    out.append("        ARGS " + json.dumps({k: str(v) for k, v in fa.items()}))
                     raw = s.get('message')
                     if raw:
                         out.append("        MSG " + repr(str(raw)[:400]))
@@ -57,7 +57,7 @@ for run in RUNS:
                 out.append(f"{t:6.0f}s +{t-prev:4.0f} TEXT {str(s.get('message',''))[:100]!r}")
                 prev = t
         print(f"TRACE {run} {tid} steps={len(out)} metrics={json.dumps(d.get('final_metrics'))}")
-        for o in out[:80]:
+        for o in out[:120]:
             print("   ", o)
     for pf in sorted((res / "patches").glob("*.patch")):
         txt = pf.read_text()

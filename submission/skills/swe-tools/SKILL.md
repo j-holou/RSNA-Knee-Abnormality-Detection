@@ -1,6 +1,6 @@
 ---
 name: swe-tools
-description: Fast helpers for fixing an issue in /workspace. locate.py ranks the source files to edit, lookup.py shows definitions and uses of several names in one call, replace_lines.py edits by line numbers when edit_file fails, find_tests.py finds existing tests, check_patch.py reviews the diff before submit_patch.
+description: Fast helpers for fixing an issue in /workspace. locate.py ranks the source files to edit, lookup.py shows definitions and uses of several names in one call, install_edit.py installs the .git/sr.py search/replace edit helper, find_tests.py finds existing tests, check_patch.py reviews the diff before submit_patch.
 ---
 
 # swe-tools
@@ -21,11 +21,10 @@ numbered code, and where it is used.
 - `Class.method` finds the method inside that class; a quoted entry is searched as literal text.
 - optional `"file": "rich/console.py"` limits the search to one file or directory.
 
-## scripts/replace_lines.py
-Use when edit_file fails to match. Replaces lines start..end (numbers from lookup.py or
-read_file) with the new code, written exactly as given including indentation.
-- `args={"file": "rich/console.py", "start": 120, "end": 124, "text": "<new lines>"}`
-Refuses changes that break Python syntax and prints the region before and after.
+## scripts/install_edit.py
+Writes the edit helper to /workspace/.git/sr.py. Every other script here installs it too, so
+this is only needed if `python3 .git/sr.py` reports that the file is missing.
+- `args={}`
 
 ## scripts/find_tests.py
 Finds existing tests that exercise a file or symbol and prints a ready pytest command.

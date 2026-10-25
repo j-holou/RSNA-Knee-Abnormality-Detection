@@ -27,18 +27,13 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 
 CALLS = [
-    # finder (7th call must be refused by the budget)
-    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'locate', 'query': 'escape trailing backslash markup'}}),
-    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'lookup', 'names': 'escape'}}),
-    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'read', 'file': 'rich/markup.py', 'start': 48, 'end': 70}}),
-    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'lookup', 'names': 'render'}}),
-    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'lookup', 'names': 'Text'}}),
-    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'lookup', 'names': 'Style'}}),
-    ('run_skill_script', {'skill_name': 'finder-tools', 'file_path': 'scripts/investigate.py', 'args': {'mode': 'lookup', 'names': 'Span'}}),
-    ('TEXT', 'FILES: rich/markup.py:48-51\nROOT CAUSE: smoke.\nCHANGE:\nOLD rich/markup.py:48-51\n```\ndef escape(\n    markup: str,\n```\nNEW\n```\ndef escape(  # smoke\n    markup: str,\n```'),
-    # fixer (no read tools)
-    ('edit_file', {'filepath': 'rich/markup.py', 'old_string': 'def escape(\n    markup: str,', 'new_string': 'def escape(  # smoke\n    markup: str,'}),
-    ('run_skill_script', {'skill_name': 'fixer-tools', 'file_path': 'scripts/check_patch.py', 'args': {'clean': 'true'}}),
+    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/locate.py',
+                          'args': {'query': 'escape trailing backslash markup'}}),
+    ('run_command', {'command': 'cd /workspace 2>/dev/null; ls .git/sr.py'}),
+    ('run_command', {'command': "cd /workspace 2>/dev/null; python3 .git/sr.py rich/markup.py <<'EOF'\n<<<<<<< SEARCH\ndef escape(\n    markup: str,\n=======\ndef escape(  # smoke\n    markup: str,\n>>>>>>> REPLACE\nEOF"}),
+    ('run_command', {'command': "cd /workspace 2>/dev/null; python3 .git/sr.py rich/markup.py <<'EOF'\n<<<<<<< SEARCH\nnot in file\n=======\nx\n>>>>>>> REPLACE\nEOF"}),
+    ('run_skill_script', {'skill_name': 'swe-tools', 'file_path': 'scripts/check_patch.py',
+                          'args': {'clean': 'true'}}),
     ('submit_patch', {}),
 ]
 
