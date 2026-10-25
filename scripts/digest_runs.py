@@ -44,6 +44,12 @@ for run in RUNS:
                 m = s.get("metrics") or {}
                 out.append(f"{t:6.0f}s +{t-prev:4.0f} {tc.get('function_name')} {args} obs={obs} {json.dumps(m)[:80] if m else ''}")
                 prev = t
+                if SHOW_OBS and tc.get('function_name') == 'edit_file':
+                    fa = tc.get('arguments', {}) or {}
+                    out.append("        ARGS " + json.dumps({k: (str(v)[:160] + f'...[{len(str(v))}]') for k, v in fa.items()}))
+                    raw = s.get('message')
+                    if raw:
+                        out.append("        MSG " + repr(str(raw)[:400]))
                 if SHOW_OBS and tc.get('function_name') in ('run_command', 'edit_file', 'run_skill_script'):
                     out.append("        OBS " + repr(str((s.get("observation") or {}).get("content", ""))[:240]))
             if not s.get("tool_calls") and s.get("source") == "agent":
