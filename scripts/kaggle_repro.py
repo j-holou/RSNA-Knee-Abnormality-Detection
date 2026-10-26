@@ -1,8 +1,8 @@
 """Kaggle CPU kernel: reproduce the paper's evaluation numbers from our eval kernels' outputs.
 
 Pushed by scripts/push_repro.py, which fills in the run lists and task ids. Four parts:
-  1. gold patches graded by the notebook grader (swegemma's default subprocess sandbox)
-  2. the same gold patches, and every saved patch of the old runs, graded in a scorer-like
+  1. (not rerun) the notebook grader's verdicts, read from each old run's task_results.jsonl
+  2. gold patches, and every saved patch of the old runs, graded in a scorer-like
      sandbox (scorer_env.py; setup follows zbigniewkirchner's public notebook)
   3. old runs: in-kernel grade vs scorer-like regrade, task by task (the "flips")
   4. paired comparisons between runs: exact McNemar test and 95% bootstrap interval
@@ -115,11 +115,9 @@ def kernel_results(kernel):
 
 
 t0 = time.time()
-# ---------------------------------------------------------------- 1. notebook grader on gold
-ev_nb = make_evaluator(scorer_like=False)
-gold_nb = {tid: grade(ev_nb, tid, tasks[tid].patch) for tid in GOLD_TASKS}
-print(f'PART1 gold patches passing, notebook grader: {sum(gold_nb.values())} of {len(GOLD_TASKS)} '
-      f'({time.time() - t0:.0f}s)', flush=True)
+# 1. The notebook grader is not rerun here: offline it retries pip installs for every task and
+#    runs for hours. Its verdicts come from each old run's own task_results.jsonl (part 3), and
+#    its gold-patch pass rate (52 of 129) from zbigniewkirchner's public notebook.
 
 # __SCORER_ENV__
 
