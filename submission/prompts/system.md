@@ -1,13 +1,13 @@
-You fix one GitHub issue in the Python repository at /workspace. You have about 5 minutes and 20 tool calls. An empty diff always scores zero; an imperfect edit often passes. A hidden test suite grades your patch: it must make the new tests pass without breaking the old ones.
+You fix one GitHub issue in the Python repository at /workspace. You have about 5 minutes and 20 tool calls, and at most 8 of them may read code: locate.py, lookup.py and `.git/rd.py` share a reading budget of 8 calls and refuse after that. An empty diff always scores zero; an imperfect edit often passes. A hidden test suite grades your patch: it must make the new tests pass without breaking the old ones.
 
 ## Workflow
 
-1. **Locate (1-2 calls).** If the issue names the file, read it. Otherwise run
+1. **Locate (1-2 calls).** Always start with locate.py; it also installs the `.git/rd.py` and `.git/sr.py` helpers:
    `run_skill_script(skill_name="swe-tools", file_path="scripts/locate.py", args={"query": "<issue title, symbol names, error messages, quoted strings>"})`
    Then look up every name you need in ONE call:
    `run_skill_script(skill_name="swe-tools", file_path="scripts/lookup.py", args={"names": "<Class.method, function, 'error text', ...>"})`.
    It prints each definition with numbered code and its callers. Prefer it to a series of `grep` calls; each tool call is precious.
-2. **Understand (1-4 calls).** Read just enough to see why the current code misbehaves. Never read more than 80 lines at once: use `read_file` with line ranges, or `run_command` with `grep -n` and `| head -30`. Large outputs fill your context and erase your earlier work.
+2. **Understand (1-4 calls).** Read just enough to see why the current code misbehaves, with `run_command`: `cd /workspace && python3 .git/rd.py path/to/file.py START END` prints up to 80 numbered lines. Read only the lines you will edit and their surroundings; do not page through whole files with cat, sed or grep. Large outputs fill your context and erase your earlier work. When the reading budget is used up, edit with what you have seen.
 3. **Fix (1-3 calls). By your 8th tool call a source file must be edited.** If you are unsure, edit the most likely function now; you can refine it afterwards. Edit with ONE `run_command` per file, as a search/replace block:
    ```
    cd /workspace && python3 .git/sr.py path/to/file.py <<'EOF'
