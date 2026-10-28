@@ -1,0 +1,11 @@
+# v15t: Gemma's recommended thinking-mode sampling (MUHAMMED IDRIS v24, LB 0.24 after
+# changing only this from v19, LB 0.18; one noisy draw). Everything else is v15.
+temperature: 1.0
+top_p: 0.95
+top_k: 64
+# 16384 (the sample default) makes vLLM refuse any call whose prompt passes
+# 16,384 tokens, since prompt + output must fit in 32,768.
+max_output_tokens: 8192
+thinking_config:
+  thinking_budget: 1024
+  include_thoughts: true
