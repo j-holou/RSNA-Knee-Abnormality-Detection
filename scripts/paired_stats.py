@@ -67,6 +67,8 @@ RUNS = {
     'v12': from_digest('digest_v12_obs.txt', 'v12'),
     'v12b': from_digest('digest_v12b_obs.txt', 'v12b'),
     'v12c': from_digest('digest_v12c_obs.txt', 'v12c'),
+    'v15a': from_digest('digest_v15a_v15t_obs.txt', 'v15a'),
+    'v15t': from_digest('digest_v15a_v15t_obs.txt', 'v15t'),
 }
 
 PAIRS = [
@@ -80,6 +82,10 @@ PAIRS = [
     ('v11s', 'v12', DEV48, 'split, prompt limit'),
     ('v11s', 'v12b', DEV48, 'split, enforced limit'),
     ('v11s', 'v12c', DEV48A, 'split, fixer cannot read (24 tasks)'),
+    ('v11s', 'v15a', DEV48, 'better locating'),
+    ('v6s', 'v15a', DEV48, 'better locating'),
+    ('v15a', 'v15t', DEV48, 'temperature 1.0, top_k 64'),
+    ('v11s', 'v15t', DEV48, 'better locating + T=1.0'),
 ]
 
 if __name__ == '__main__':
