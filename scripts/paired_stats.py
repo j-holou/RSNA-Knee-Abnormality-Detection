@@ -69,6 +69,7 @@ RUNS = {
     'v12c': from_digest('digest_v12c_obs.txt', 'v12c'),
     'v15a': from_digest('digest_v15a_v15t_obs.txt', 'v15a'),
     'v15t': from_digest('digest_v15a_v15t_obs.txt', 'v15t'),
+    'v15b': from_digest('digest_v15b_obs.txt', 'v15b'),
 }
 
 PAIRS = [
@@ -86,6 +87,9 @@ PAIRS = [
     ('v6s', 'v15a', DEV48, 'better locating'),
     ('v15a', 'v15t', DEV48, 'temperature 1.0, top_k 64'),
     ('v11s', 'v15t', DEV48, 'better locating + T=1.0'),
+    ('v15a', 'v15b', DEV48, 'same agent, two runs (noise)'),
+    ('v11s', 'v15b', DEV48, 'better locating, run 2'),
+    ('v6s', 'v15b', DEV48, 'better locating, run 2'),
 ]
 
 if __name__ == '__main__':
